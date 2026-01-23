@@ -113,4 +113,3 @@ dependencies:
       - werkzeug==3.0.1
       - xarray==2024.1.1
       - zipp==3.17.0
-prefix: D:\.conda\envs\chemfh
