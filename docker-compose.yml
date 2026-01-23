@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  chemfh:
+    build: .
+    container_name: chemfh
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persist results between restarts
+      - chemfh_results:/app/static/results
+      # Persist database
+      - chemfh_db:/app/db
+    environment:
+      - DEBUG=False
+      - DJANGO_SETTINGS_MODULE=ChemFH.settings
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  chemfh_results:
+  chemfh_db:
