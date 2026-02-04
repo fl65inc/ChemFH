@@ -1,63 +1,15 @@
-# Git
+__pycache__
+*.pyc
+*.pyo
 .git
 .gitignore
-
-# Python
-__pycache__
-*.py[cod]
-*$py.class
-*.so
-.Python
+.env
+!README.md
+docker-compose.yml
+environment.yml
 .venv
 venv
-env
-ENV
-
-# IDE
-.idea
-.vscode
-*.swp
-*.swo
-
-# Testing
+*.egg-info
+.pytest_cache
 .coverage
 htmlcov
-.pytest_cache
-.tox
-
-# Build
-*.egg-info
-dist
-build
-
-# Local files
-*.log
-*.sqlite3
-db.sqlite3
-
-# Docker
-Dockerfile
-docker-compose.yml
-.docker
-
-# Temporary files
-*.tmp
-*.temp
-cookies.txt
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Results (will be created at runtime)
-static/results/csv/*
-static/results/pdf/*
-
-# Documentation build
-docs/_build
-
-# Jupyter
-.ipynb_checkpoints
-
-# Claude Code
-.claude

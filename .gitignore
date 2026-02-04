@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Development files
+db.sqlite3
+*.log
+.env
+
+# Large data files (not needed in repo - will be on PVC or in Docker image)
+service/ChemDiv_pred.csv
+ChemFH_dataset/
+
+# Generated results (stored on PVC at runtime)
+static/results/
+
+# Test outputs and model files (large, included in Docker image only)
+static/media/chemprop/checkpoint/*.csv
+static/media/chemprop/checkpoint/fold_*/test_*.csv
+static/media/chemprop/checkpoint/fold_*/model_*/*.pt
+static/media/chemprop/checkpoint/fold_*/model_*/events.out.*
+*.log
+
+# Large JS files and source maps (included in Docker image only)
+static/common/ketcher-standalone-v2.6.4/standalone/static/js/main.*.js
+static/services/js/*.map
+
+# Dev scripts
+service/interface.py
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Docker
+docker-compose.yml
+
+# Conda
+environment.yml
