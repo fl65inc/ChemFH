@@ -44,7 +44,7 @@ def returnHandle(taskid, result, noTotal, noValid):
     return return_result
 
 
-@router.post('/fh', description="")
+@router.post('/fh', description="Evaluate SMILES for frequent hitters. Accepts a single SMILES string or a list. Returns original and standardized SMILES along with model predictions and rule-based filter results.")
 def chemfhCal(request, data: SMILESSchema):
     smiles_list, invalidIdx = wash_input_mol(
         data.SMILES, issmiles=True, invalidStr='invalid', returnInvalidIdx=True)
@@ -65,6 +65,7 @@ def chemfhCal(request, data: SMILESSchema):
     smiles_df = pd.DataFrame(smiles_list, columns=['smiles'])
     result = pd.concat([smiles_df, result], axis=1)
     # 整合无效的结果
+    original_smiles = [data.SMILES] if isinstance(data.SMILES, str) else list(data.SMILES)
     for _, flag in enumerate(invalidIdx):
         if not flag:
             new_row = pd.DataFrame([{col: 'Invalid Molecule' if col !=
@@ -74,6 +75,8 @@ def chemfhCal(request, data: SMILESSchema):
             df2 = result.iloc[_:]  # 第二部分
             result = pd.concat(
                 [df1, new_row, df2]).reset_index(drop=True)
+    # 添加原始SMILES
+    result.insert(0, 'original_smiles', original_smiles)
     # 保存文件
     tmpf = tempfile.NamedTemporaryFile()
     file_name = tmpf.name.split('/')[-1]
