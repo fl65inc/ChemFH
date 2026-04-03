@@ -4,7 +4,7 @@ Author: Kotori Y
 Date: 2020-10-24 16:38:14
 LastEditors: Kotori Y
 LastEditTime: 2020-10-24 19:26:35
-FilePath: \ChemFH\ChemFH\substructure_filter\load_pattern.py
+FilePath: ChemFH/substructure_filter/load_pattern.py
 AuthorMail: kotori@cbdd.me
 '''
 
@@ -16,7 +16,6 @@ from rdkit.Chem import AllChem as Chem
 
 __all__ = ['loadpkl']
 _dir = os.path.abspath(os.path.join(os.path.dirname("__file__")))
-print(_dir)
 
 def _Generatepkl(endpoint):
     """  
@@ -43,7 +42,6 @@ def _Generatepkl(endpoint):
         lines = csv.reader(f_obj, delimiter='\t')
         next(lines)
         lines = tuple(lines)
-    f_obj.close()
 
     for line in lines:
         patt = Chem.MolFromSmarts(line[-1])
@@ -53,7 +51,6 @@ def _Generatepkl(endpoint):
     outfile = os.path.join(_dir, 'static/media/rule/data/Pattern', f'{endpoint}.pkl.gz')
     with gzip.open(outfile, 'wb') as f_out:
         f_out.write(out)
-    f_out.close()
 
 
 def loadpkl(endpoint):
@@ -74,7 +71,7 @@ def loadpkl(endpoint):
     filename = os.path.join(_dir, 'static/media/rule/data/Pattern', f'{endpoint}.pkl.gz')
     try:
         pattl = cPickle.load(gzip.open(filename, 'rb'))
-    except:
+    except Exception:
         _Generatepkl(endpoint)
         return loadpkl(endpoint)
     return pattl

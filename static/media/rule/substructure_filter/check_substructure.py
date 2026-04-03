@@ -4,7 +4,7 @@ Author: Kotori Y
 Date: 2020-10-24 16:08:49
 LastEditors: Kotori Y
 LastEditTime: 2020-11-04 11:23:49
-FilePath: \ChemFH\ChemFH\substructure_filter\check_substructure.py
+FilePath: ChemFH/substructure_filter/check_substructure.py
 AuthorMail: kotori@cbdd.me
 '''
 
@@ -13,7 +13,7 @@ from functools import wraps
 
 try:
     from load_pattern import loadpkl
-except Exception:
+except (ImportError, ModuleNotFoundError):
     from .load_pattern import loadpkl
 
 

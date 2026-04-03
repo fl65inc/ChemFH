@@ -4,7 +4,7 @@ Author: Kotori Y
 Date: 2020-10-24 16:03:49
 LastEditors: Kotori Y
 LastEditTime: 2020-11-03 08:56:20
-FilePath: \ChemFH\ChemFH\substructure_filter\__init__.py
+FilePath: ChemFH/substructure_filter/__init__.py
 AuthorMail: kotori@cbdd.me
 '''
 
@@ -21,7 +21,7 @@ sys.path.append(os.path.join(settings.SITE_ROOT, 'static') + '/media/rule/substr
 try:
     from check_substructure import checkPattl
     from visualization import highlightAtoms
-except Exception:
+except (ImportError, ModuleNotFoundError):
     from .check_substructure import checkPattl
     from .visualization import highlightAtoms
 

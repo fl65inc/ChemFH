@@ -4,7 +4,7 @@ Author: Kotori Y
 Date: 2020-10-26 09:41:54
 LastEditors: Kotori Y
 LastEditTime: 2020-10-26 12:45:33
-FilePath: \ChemFH\ChemFH\substructure_filter\visualization.py
+FilePath: ChemFH/substructure_filter/visualization.py
 AuthorMail: kotori@cbdd.me
 '''
 

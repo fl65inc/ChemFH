@@ -64,7 +64,7 @@ def wash_input_mol(data, issmiles=True, invalidStr='', returnInvalidIdx=False):
             result.append(returnItem)
             flagIdx.append(True)
             result2.append(returnItem)
-        except:
+        except Exception:
             flagIdx.append(False)
             result2.append(invalidStr)
     if returnInvalidIdx:

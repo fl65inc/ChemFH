@@ -11,16 +11,12 @@ This module is derived from molvs(https://github.com/mcs07/MolVS.git)
 @Blog: https://blog.moyule.me
 
 """
-from __future__ import print_function
-from __future__ import unicode_literals
-from __future__ import division
 import copy
 import sys
 import functools
 import logging
 from itertools import tee
 
-import six
 from rdkit import Chem
 from rdkit.Chem import AllChem
 from rdkit.Chem import rdMolDescriptors
@@ -49,7 +45,7 @@ def pairwise(iterable):
     """Utility function to iterate in a pairwise fashion."""
     a, b = tee(iterable)
     next(b, None)
-    return six.moves.zip(a, b)
+    return zip(a, b)
 
 
 # ==============================================================================
@@ -458,7 +454,7 @@ class Normalizer(object):
         return outmol
 
     def _normalize_fragment(self, mol):
-        for n in six.moves.range(self.max_restarts):
+        for n in range(self.max_restarts):
             # Iterate through Normalization transforms and apply each in order
             for normalization in self.normalizations:
                 product = self._apply_transform(mol, normalization.transform)
@@ -482,7 +478,7 @@ class Normalizer(object):
         after the final application, the first product (sorted alphabetically by SMILES) is chosen.
         """
         mols = [mol]
-        for n in six.moves.range(20):
+        for n in range(20):
             products = {}
             for mol in mols:
                 for product in [x[0] for x in rule.RunReactants((mol,))]:

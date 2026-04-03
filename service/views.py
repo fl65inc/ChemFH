@@ -1,31 +1,26 @@
-from django.shortcuts import render
-from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render, get_object_or_404, redirect
-from django.urls import reverse
-from django.views import generic
-from django.utils import timezone
+import ast
+import csv
+import json
+import os
 import tempfile
 import time
-import os
-import math
-from django.conf import settings
-import pandas as pd
-import numpy as np
-from django.http import FileResponse
-from rdkit.Chem import PandasTools as pt
-import json
-from random import randrange
-from django.http import HttpResponse
 
-from rdkit.Chem.Draw import rdMolDraw2D
+import numpy as np
+import pandas as pd
+from django.conf import settings
+from django.http import FileResponse, HttpResponse, HttpResponseRedirect
+from django.shortcuts import render
+from django.urls import reverse
+from rdkit import Chem
+from rdkit.Chem import AllChem as Chem
 from rdkit.Chem import rdDepictor
+from rdkit.Chem.Draw import rdMolDraw2D
 
 import static.media.rule.filter_rule as fr
-from rdkit.Chem import Draw
-import base64
-from io import BytesIO
-
+from service.utils.handle_mol import wash_input_mol
 from service.utils.handle_pdf import gen_pdf
+from service.utils.utils import getMD5
+from .models import chemfh
 
 
 def HighlightAtoms(mol, highlightAtoms, figsize=[400, 200], kekulize=True):
@@ -58,7 +53,7 @@ def HighlightAtoms(mol, highlightAtoms, figsize=[400, 200], kekulize=True):
     if kekulize:
         try:
             Chem.Kekulize(mc)
-        except:
+        except Exception:
             mc = Chem.Mol(mol.ToBinary())
     if not mc.GetNumConformers():
         rdDepictor.Compute2DCoords(mc)
@@ -85,14 +80,6 @@ un_threhold = [
 all_rule = ['Aggregators', 'Fluc', 'Blue_fluorescence', 'Green_fluorescence', 'Reactive', 'Other_assay_interference',
             'Promiscuous', 'ALARM_NMR', 'BMS', 'Chelator_Rule', 'GST_FHs_Rule', 'His_FHs_Rule',
             'Luciferase_Inhibitor_Rule', 'NTD', 'PAINS', 'Potential_Electrophilic_Rule', 'Lilly']
-from rdkit import Chem
-from rdkit import RDConfig
-from rdkit.Chem import AllChem as Chem
-from rdkit.Chem import Descriptors, Lipinski, QED
-from rdkit.Chem.Scaffolds import MurckoScaffold
-from math import pi, log10
-from collections.abc import Iterable
-from itertools import combinations
 
 
 def evaluationIndex(request):
@@ -103,8 +90,12 @@ def filterIndex(request):
     return render(request, "services/screening/index.html")
 
 
-from service.utils.utils import getMD5
-from .models import chemfh
+def _parse_list(x):
+    """Safely parse a string representation of a list, replacing unsafe eval()."""
+    if isinstance(x, str):
+        return ast.literal__parse_list(x)
+    return x
+
 
 name2dbName = {
     'id': 'id', 'taskid': 'taskId', 'smiles': 'smiles', 'aggregators': 'Colloidal aggregators',
@@ -229,12 +220,12 @@ def evaluationCal(request):
                      ['Aggregators', 'Fluc', 'Blue_fluorescence', 'Green_fluorescence', 'Reactive', 'Promiscuous',
                       'Other_assay_interference', ]]
         return_result['atom_list'] = result[rule_name].iloc[0].values.tolist()
-        return_result['cnt'] = return_result['atom_list'].map(lambda x: len(eval(x) if isinstance(x, str) else x))
+        return_result['cnt'] = return_result['atom_list'].map(lambda x: len(_parse_list(x)))
         return_result['svg'] = return_result['atom_list'].map(
-            lambda x: ''.join([HighlightAtoms(mol, highlightAtoms=item, figsize=[200, 200]) for item in (eval(x) if
+            lambda x: ''.join([HighlightAtoms(mol, highlightAtoms=item, figsize=[200, 200]) for item in (_parse_list(x) if
                                                                                                          isinstance(x,
                                                                                                                     str) else x)])
-            if (eval(x) if isinstance(x, str) else x) != [] else '')
+            if (_parse_list(x)) != [] else '')
         return_result['explanation'] = mechanism_explanation
         other_rule_name = [item + '_index' for item in
                            ['ALARM_NMR', 'BMS', 'Chelator_Rule', 'GST_FHs_Rule', 'His_FHs_Rule',
@@ -242,14 +233,14 @@ def evaluationCal(request):
                             'Potential_Electrophilic_Rule', 'Lilly']]
         other_rule_result = result[other_rule_name].iloc[0].transpose().reset_index()
         other_rule_result.columns = ['mechanism', 'atom_list']
-        other_rule_result['cnt_match'] = other_rule_result['atom_list'].map(lambda x: len(eval(x) if isinstance(x,
+        other_rule_result['cnt_match'] = other_rule_result['atom_list'].map(lambda x: len(_parse_list(x) if isinstance(x,
                                                                                                                 str)
                                                                                           else x))
         other_rule_result['img_match'] = other_rule_result['atom_list'].map(
-            lambda x: ''.join([HighlightAtoms(mol, highlightAtoms=item, figsize=[200, 200]) for item in (eval(x) if
+            lambda x: ''.join([HighlightAtoms(mol, highlightAtoms=item, figsize=[200, 200]) for item in (_parse_list(x) if
                                                                                                          isinstance(x,
                                                                                                                     str) else x)])
-            if (eval(x) if isinstance(x, str) else x) != [] else '')
+            if (_parse_list(x)) != [] else '')
         other_rule_result['mechanism'] = other_rule_display
         other_rule_result['explanation'] = other_rule_explanation
 
@@ -277,14 +268,11 @@ def handle_uploaded_file(f, path):
 
 
 def save_to_file(file_name, contents):
-    fh = open(file_name, 'wb')
-    fh.write(contents)
-    fh.close()
+    with open(file_name, 'wb') as fh:
+        fh.write(contents)
 
 
 SITE_ROOT = os.path.abspath(os.path.dirname(__file__))
-import csv
-from service.utils.handle_mol import wash_input_mol
 
 
 def screeningCal(request):
@@ -338,7 +326,6 @@ def screeningCal(request):
                     file_data = file_obj.read().decode('utf-8').splitlines()
                     reader = csv.reader(file_data)
                     for row in reader:
-                        print(row)
                         if 'smiles' in row[0].lower():
                             continue
                         smiles_list.append(row[0])
@@ -348,7 +335,6 @@ def screeningCal(request):
         elif method == '2':
             smiles_list = request.POST.get('smiles-list')
             smiles_list = smiles_list.strip().split('\r\n')
-        print(smiles_list)
 
         if len(smiles_list) > 5000:
             message = 'The number of molecules exceeds a predetermined number!'
@@ -442,10 +428,10 @@ def screening_detail(request, filename, index):
                  ['Aggregators', 'Fluc', 'Blue_fluorescence', 'Green_fluorescence', 'Reactive', 'Promiscuous',
                   'Other_assay_interference', ]]
     return_result['atom_list'] = result[rule_name].iloc[index].values.tolist()
-    return_result['cnt'] = return_result['atom_list'].map(lambda x: len(eval(x)))
+    return_result['cnt'] = return_result['atom_list'].map(lambda x: len(_parse_list(x)))
     return_result['svg'] = return_result['atom_list'].map(
-        lambda x: ''.join([HighlightAtoms(mol, highlightAtoms=item) for item in eval(x)])
-        if eval(x) != [] else '')
+        lambda x: ''.join([HighlightAtoms(mol, highlightAtoms=item) for item in _parse_list(x)])
+        if _parse_list(x) != [] else '')
     return_result['explanation'] = mechanism_explanation
     # basic = Basic([Chem.MolFromSmiles(mol) for mol in [smiles]])
     # basic_prop = basic.CalculateBasicProperties().round(3)
@@ -455,10 +441,10 @@ def screening_detail(request, filename, index):
                                                     'Potential_Electrophilic_Rule', 'Lilly']]
     other_rule_result = result[other_rule_name].iloc[index].transpose().reset_index()
     other_rule_result.columns = ['mechanism', 'atom_list']
-    other_rule_result['cnt_match'] = other_rule_result['atom_list'].map(lambda x: len(eval(x)))
+    other_rule_result['cnt_match'] = other_rule_result['atom_list'].map(lambda x: len(_parse_list(x)))
     other_rule_result['img_match'] = other_rule_result['atom_list'].map(
-        lambda x: ''.join([HighlightAtoms(mol, highlightAtoms=item) for item in eval(x)])
-        if eval(x) != [] else '')
+        lambda x: ''.join([HighlightAtoms(mol, highlightAtoms=item) for item in _parse_list(x)])
+        if _parse_list(x) != [] else '')
     other_rule_result['explanation'] = other_rule_explanation
     other_rule_result['mechanism'] = other_rule_display
     # other_rule_result.to_csv('test.csv', index=False)
@@ -540,7 +526,7 @@ def handleDownload(result):
                   'ALARM_NMR', 'BMS', 'Chelator_Rule', 'GST_FHs_Rule', 'His_FHs_Rule',
                   'Luciferase_Inhibitor_Rule', 'NTD', 'PAINS',
                   'Potential_Electrophilic_Rule', 'Lilly']]
-    result[rule_name] = result[rule_name].map(lambda x: len(eval(x)))
+    result[rule_name] = result[rule_name].map(lambda x: len(_parse_list(x)))
     machanism_name = [item + ' uncertainty' for item in
                       ['Colloidal aggregators', 'FLuc inhibitors', 'Blue fluorescence', 'Green fluorescence',
                        'Reactive compounds', 'Promiscuous compounds', 'Other assay interference', ]]
@@ -594,7 +580,6 @@ def downloadPDF(request):
         result = result.rename(columns=name2dbName)
         gen_pdf(result, pdf_filepath, os.path.join(
             SITE_ROOT, '../static/results'), taskid)
-        buffer = open(pdf_filepath, 'rb')
-        return FileResponse(buffer, as_attachment=True, filename=pdf_filepath.split('/')[-1])
+        return FileResponse(open(pdf_filepath, 'rb'), as_attachment=True, filename=os.path.basename(pdf_filepath))
     else:
         return HttpResponseRedirect(reverse('home:index'))
